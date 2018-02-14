@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        #start {
+            position: absolute;
+            left: 200px;
+            top: 200px;
+        }
+
+    </style>
+    <script>
+    "use strict"
+    
+    var ctx;
+    var player;
+    var keyCode=0;
+    var mainTimer = NaN, jumpTimer = NaN;
+    var jumpHeight = 354;
+    var check = false;
+    var dec = false;
+    var holePoint=1250;
+    var whileJump = false;
+    var count = 0;
+
+    function init() {
+        var stage = document.getElementById("stage");
+        ctx = stage.getContext("2d");
+        ctx.font = "bold 48px sans-serif";
+        ctx.fillStyle = "#2ECCFA";
+        ctx.fillRect(0, 0, 1250, 500);
+        ctx.fillStyle = "#8A2908";
+        ctx.fillRect(0, 400, 1250, 100);
+
+        player = new Player(100,350);
+        
+        player.paint(100, 355, 50, 50);
+
+
+    }
+
+    function Player(x, y) {
+        this.x = x;
+        this.y = y;
+
+        
+
+        this.paint = function(x, y, w, h){
+            var img = document.getElementById("player");
+            ctx.drawImage(img, x, y, w, h);          
+        }
+
+    }
+
+    function go() {
+        window.onkeydown = mykeydown;
+        window.onkeyup = mykeyup;
+        
+        mainTimer = setInterval(tick, 45);
+        document.getElementById("start").style.display = "none";
+    }
+
+    function tick() {
+        ctx.fillStyle = "#2ECCFA";
+        ctx.fillRect(0, 0, 1250, 500);
+        ctx.fillStyle = "#8A2908";
+        ctx.fillRect(0, 400, 1250, 100);
+        
+        switch(keyCode){
+            case 90:
+                player.paint(100, 355, 50, 50);
+                clearInterval(jumpTimer);
+                clearInterval(mainTimer);
+                mainTimer = setInterval(tick, 7);
+                jumpTimer = setInterval(jump, 7);
+                whileJump = true;
+                break;   
+        }
+        if(isNaN(jumpTimer)){
+            player.paint(100, 355, 50, 50);
+        }
+
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(holePoint, 400, 100, 100);
+        holePoint--;
+        if(holePoint <= -100){
+            holePoint = 1250;
+        }
+    }
+
+    function jump() {
+        ctx.fillStyle = "#2ECCFA";
+        ctx.fillRect(0, 0, 1250, 500);
+        ctx.fillStyle = "#8A2908";
+        ctx.fillRect(0, 400, 1250, 100);
+        if(jumpHeight==355){
+            clearInterval(jumpTimer);
+            jumpTimer = NaN;
+            dec = false;
+            whileJump = false;
+            jumpHeight--;
+            count = 0;
+        }
+        else if(dec){
+            if(count == 50){
+                jumpHeight++;
+            }
+            else{
+                
+                count++;
+            }
+
+        }
+        else {
+            jumpHeight--;
+        }
+                
+        if(jumpHeight == 250){
+            dec = true;
+        }
+        player.paint(100, jumpHeight, 50, 50);
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(holePoint, 400, 100, 100);
+    }
+
+    function mykeydown(e) {
+        if(!whileJump){
+            keyCode = e.keyCode;
+        }
+    }
+    function mykeyup(e) {
+        keyCode = 0;
+    }
+
+    </script>
+</head>
+<body onload="init()">
+    <canvas id="stage" width="1250" height="500"></canvas>
+    <img id="start" src="start.png" onclick="go()"><br/>
+    <img id="player" src="hero3.png" style="display:none" />
+
+</body>
+</html>
