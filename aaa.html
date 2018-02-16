@@ -16,12 +16,13 @@
     var ctx;
     var player;
     var keyCode=0;
-    var mainTimer = NaN, jumpTimer = NaN;
-    var jumpHeight = 354;
+    var mainTimer = NaN, jumpTimer = NaN, fallTimer = NaN;
+    var jumpHeight = 354, fallHeight = 355;
     var check = false;
     var dec = false;
-    var holePoint=1250;
-    var whileJump = false;
+    var fallPoint;
+    var holes = [];
+    var whileJump = false, whileFall = false;
     var count = 0;
 
     function init() {
@@ -33,7 +34,7 @@
         ctx.fillStyle = "#8A2908";
         ctx.fillRect(0, 400, 1250, 100);
 
-        player = new Player(100,350);
+        player = new Player(100,355);
         
         player.paint(100, 355, 50, 50);
 
@@ -44,9 +45,15 @@
         this.x = x;
         this.y = y;
 
-        
+        this.getY = function() {
+            return this.y;
+        }
 
-        this.paint = function(x, y, w, h){
+        this.setY = function(y) {
+            this.y = y;
+        }
+
+        this.paint = function(x, y, w, h) {
             var img = document.getElementById("player");
             ctx.drawImage(img, x, y, w, h);          
         }
@@ -57,18 +64,18 @@
         window.onkeydown = mykeydown;
         window.onkeyup = mykeyup;
         
-        mainTimer = setInterval(tick, 45);
+        mainTimer = setInterval(tick, 7);
         document.getElementById("start").style.display = "none";
     }
 
     function tick() {
         ctx.fillStyle = "#2ECCFA";
-        ctx.fillRect(0, 0, 1250, 500);
+        ctx.fillRect(0, 0, 1250, 500); //空
         ctx.fillStyle = "#8A2908";
-        ctx.fillRect(0, 400, 1250, 100);
+        ctx.fillRect(0, 400, 1250, 100); //地面
         
         switch(keyCode){
-            case 90:
+            case 90: //Zキー押下
                 player.paint(100, 355, 50, 50);
                 clearInterval(jumpTimer);
                 clearInterval(mainTimer);
@@ -77,16 +84,34 @@
                 whileJump = true;
                 break;   
         }
-        if(isNaN(jumpTimer)){
+        if(isNaN(jumpTimer) && !whileFall){ //Zキー押されていない場合
             player.paint(100, 355, 50, 50);
         }
 
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(holePoint, 400, 100, 100);
-        holePoint--;
-        if(holePoint <= -100){
-            holePoint = 1250;
+        if(random(200) == 0){
+            ctx.fillStyle = "#000000"; //穴
+            ctx.fillRect(1250, 400, 50, 100);
+            holes.push(1250);
+            console.log(holes);
         }
+
+        holes.forEach( function(value, index) {
+            holes[index]--;
+            ctx.fillStyle = "#000000"; //穴
+            ctx.fillRect(value, 400, 100, 100);
+            if(value <= -100){
+                holes.shift();
+            }
+            if((120 > value && 120 < (value + 100)) && player.getY() == 355 && !whileFall){
+            clearInterval(fallTimer);
+            clearInterval(mainTimer);
+            mainTimer = setInterval(tick, 7);
+            fallTimer = setInterval(fall, 7);
+            whileFall = true;
+            fallPoint = value;
+        }
+        });
+        
     }
 
     function jump() {
@@ -94,6 +119,7 @@
         ctx.fillRect(0, 0, 1250, 500);
         ctx.fillStyle = "#8A2908";
         ctx.fillRect(0, 400, 1250, 100);
+        player.setY(jumpHeight);
         if(jumpHeight==355){
             clearInterval(jumpTimer);
             jumpTimer = NaN;
@@ -106,11 +132,9 @@
             if(count == 50){
                 jumpHeight++;
             }
-            else{
-                
+            else{       
                 count++;
             }
-
         }
         else {
             jumpHeight--;
@@ -120,12 +144,45 @@
             dec = true;
         }
         player.paint(100, jumpHeight, 50, 50);
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(holePoint, 400, 100, 100);
+        holes.forEach( function(value) {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(value, 400, 100, 100);
+        });
+    }
+
+    function fall() {
+        ctx.fillStyle = "#2ECCFA";
+        ctx.fillRect(0, 0, 1250, 500);
+        ctx.fillStyle = "#8A2908";
+        ctx.fillRect(0, 400, 1250, 100);
+
+        fallHeight++;
+
+        holes.forEach( function(value) {
+            ctx.fillStyle = "#000000";
+            ctx.fillRect(value, 400, 100, 100);
+            if(150 >= (fallPoint+100)){
+                player.paint(fallPoint+55, fallHeight, 50, 50);
+            }
+            else{
+                player.paint(100, fallHeight, 50, 50);
+            }
+        });
+        count++;
+        if(count >= 200){
+            clearInterval(mainTimer);
+            clearInterval(fallTimer);
+            ctx.fillText("GAME OVER", 200, 200);
+        }
+
+    }
+
+    function random(v) {
+        return Math.floor(Math.random() * v);
     }
 
     function mykeydown(e) {
-        if(!whileJump){
+        if(!whileJump && !whileFall){
             keyCode = e.keyCode;
         }
     }
