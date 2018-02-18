@@ -16,7 +16,7 @@
     var ctx;
     var player;
     var enemy;
-    var keyCode=0;
+    var keyCode=[0, 0, 0];
     var mainTimer = NaN, jumpTimer = NaN, fallTimer = NaN;
     var jumpHeight = 353, fallHeight = 355;
     var check = false;
@@ -24,10 +24,11 @@
     var fallPoint;
     var holes = [];
     var enemys = [];
-    var whileJump = false, whileFall = false;
+    var whileJump = false, whileFall = false, whileMove = false;
     var count = 0;
     var holeInterval = 0;
     var enemyInterval = 0;
+    var moveX = 0;
 
     function init() { //初期設定
         var stage = document.getElementById("stage");
@@ -49,8 +50,16 @@
         this.x = x;
         this.y = y;
 
+        this.getX = function() {
+            return this.x;
+        }
+
         this.getY = function() {
             return this.y;
+        }
+
+        this.setX = function(x) {
+            this.x = x;
         }
 
         this.setY = function(y) {
@@ -84,7 +93,7 @@
             if(value <= -200){ //画面外にある場合リセット
                 holes.shift();
             }
-            if((130 > value && 130 < (value+100)) && player.getY() == 355 && !whileJump && !whileFall){ //穴の落下判定
+            if((player.getX()+30 > value && player.getX()+30 < (value+100)) && player.getY() == 355 && !whileJump && !whileFall){ //穴の落下判定
                 whileFall = true;
                 clearInterval(fallTimer);
                 clearInterval(mainTimer);
@@ -100,13 +109,13 @@
             if(value <= -200){ //画面外にいる場合リセット
                 enemys.shift();
             }
-            if((130 > value && 130 < (value+50)) && !whileJump){ //ジャンプしていないときに敵に接触
+            if((player.getX()+30 > value && player.getX() < (value+40)) && !whileJump){ //ジャンプしていないときに敵に接触
                 clearInterval(mainTimer);
                 ctx.fillStyle = "#000000";
                 ctx.fillText("GAME OVER", 200, 200);
             }
-            else if((130 > value && 130 < (value+50)) && player.getY() >= 315 && whileJump){ //敵の上に着地
-                player.paint(100, player.getY(), 50, 50);
+            else if((player.getX()+25 > value && player.getX() < (value+30)) && player.getY() >= 315 && whileJump){ //敵の上に着地
+                player.paint(player.getX(), player.getY(), 50, 50);
                 clearInterval(mainTimer);
                 clearInterval(jumpTimer);
                 ctx.fillStyle = "#000000";
@@ -114,9 +123,22 @@
             }
         });
 
-        switch(keyCode){
+        keyCode.forEach( function(value) {
+        switch(value){
+            case 37:
+                if(!whileFall){
+                    moveX = player.getX();
+                    player.setX(moveX -= 2);
+                }
+                break;
+            case 39:
+                if(!whileFall){
+                    moveX = player.getX();
+                    player.setX(moveX += 2);
+                }
+                break;
             case 90: //Zキー押下
-                player.paint(100, 355, 50, 50);
+                player.paint(player.getX(), 355, 50, 50);
                 clearInterval(jumpTimer);
                 clearInterval(mainTimer);
                 mainTimer = setInterval(tick, 7);
@@ -124,8 +146,9 @@
                 whileJump = true;
                 break;   
         }
+        });
         if(isNaN(jumpTimer) && !whileFall){ //ジャンプ,落下していない場合常にプレイヤー描写
-            player.paint(100, 355, 50, 50);
+            player.paint(player.getX(), 355, 50, 50);
         }
 
         if(random(500) == 0 && (enemyInterval >= 300 || enemyInterval == 0) && holeInterval == 0){ //穴ランダム生成
@@ -185,7 +208,7 @@
         if(jumpHeight == 241){ //ジャンプ頂点前判定
             dec = true;
         }
-        player.paint(100, jumpHeight, 50, 50);
+        player.paint(player.getX(), jumpHeight, 50, 50);
         holes.forEach( function(value) {
             paintHole(value);
         });
@@ -204,11 +227,11 @@
 
         holes.forEach( function(value) {
             paintHole(value);
-            if(150 >= (holes[fallPoint]+100)){ //穴の右端に接触時プレイヤーを移動
+            if(player.getX() + 50 >= (holes[fallPoint]+100)){ //穴の右端に接触時プレイヤーを移動
                 player.paint(holes[fallPoint]+55, fallHeight, 50, 50);
             }
             else{
-                player.paint(100, fallHeight, 50, 50);
+                player.paint(player.getX(), fallHeight, 50, 50);
             }
         });
         count++;
@@ -240,12 +263,28 @@
     }
 
     function mykeydown(e) {
-        if(!whileJump && !whileFall){ //ジャンプ,落下していない場合keyCode=90
-            keyCode = e.keyCode;
+        if(!whileFall){ //ジャンプ,落下していない場合
+            if(e.keyCode == 37){
+                keyCode[0] = 37;
+            }
+            else if(e.keyCode == 39){
+                keyCode[1] = 39;
+            }
+            else if(!whileJump){
+                keyCode[2] = 90;
+            }
         }
     }
     function mykeyup(e) {
-        keyCode = 0;
+        if(e.keyCode == 37){
+            keyCode[0] = 0;
+        }
+        else if(e.keyCode == 39){
+            keyCode[1] = 0;
+        }
+        else{
+            keyCode[2] = 0;
+        }
     }
 
     </script>
