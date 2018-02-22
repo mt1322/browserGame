@@ -15,7 +15,6 @@
     
     var ctx;
     var player;
-    var enemy;
     var keyCode=[0, 0, 0];
     var mainTimer = NaN, jumpTimer = NaN, fallTimer = NaN;
     var jumpHeight = 353, fallHeight = 355;
@@ -26,12 +25,14 @@
     var enemys = [];
     var whileJump = false, whileFall = false, whileMove = false;
     var jumpCount = 0;
-    var enemyCount = [], enemyCount2 = [];
+    var fallCount = 0;
+    var enemyCount = [];
     var holeInterval = 0;
     var enemyInterval = 0;
     var moveX = 0;
     var background = 0;
     var background2 = 2500;
+    var enemyUp = [];
 
     function init() { //初期設定
         var stage = document.getElementById("stage");
@@ -42,9 +43,9 @@
         player = new Player(100,355);
         
         player.paint(100, 355, 50, 50);
-        enemy = document.getElementById("enemy");
+        var enemy = document.getElementById("enemy");
+        var enemy2 = document.getElementById("enemy2");
         var grass = document.getElementById("grass");
-
         var hole = document.getElementById("hole");
     }
 
@@ -104,22 +105,47 @@
         });
 
         enemys.forEach( function(value, index) {
-            if(enemyCount[index] < 200){
-                enemys[index] -= 2;
+            switch(value.enemyId){
+                case 0:
+                    if(enemyCount[index] < 150){
+                        enemys[index].enemyPointX -= 2;
+                    }
+                    else{
+                        enemys[index].enemyPointX += 0.1;
+                    }
+                    break;
+                case 1:
+                    if(value.enemyPointY <= 200) enemyUp[index] = false;
+                    else if(value.enemyPointY >= 355) enemyUp[index] = true;
+                    if(enemyUp[index]){
+                        enemys[index].enemyPointY--;
+                    }
+                    else{
+                        enemys[index].enemyPointY++;
+                    }
+                    enemys[index].enemyPointX--;
+                    break;
             }
-            else{
-                enemys[index] += 0.1;
+            paintEnemy(value.enemyId, value.enemyPointX, value.enemyPointY);
+            if(value.enemyPointX <= -200){ //画面外にいる場合リセット
+                switch(value.enemyId){
+                    case 0:
+                        enemys.shift();
+                        enemyCount.shift();
+                        break;
+                    case 1:
+                        enemys.shift();        
+                        enemyUp.shift();
+                        break;
+                }
             }
-
-            paintEnemy(value);
-            if(value <= -200){ //画面外にいる場合リセット
-                enemys.shift();
-            }
-            if((player.getX()+30 > value && player.getX() < (value+40)) && !whileJump){ //ジャンプしていないときに敵に接触
+            if((player.getX()+30 > value.enemyPointX) && (player.getX()-30 < value.enemyPointX) && 
+               (325 < value.enemyPointY) && !whileJump){ //ジャンプしていないときに敵に接触
                 clearInterval(mainTimer);
                 ctx.fillText("GAME OVER", 200, 200);
             }
-            else if((player.getX()+25 > value && player.getX() < (value+30)) && player.getY() >= 315 && whileJump){ //敵の上に着地
+            else if((player.getX()+30 > value.enemyPointX) && (player.getX()-30 < value.enemyPointX) && 
+                    (player.getY()+30 > value.enemyPointY) && (player.getY()-30 < value.enemyPointY) && whileJump){ //敵の上に着地
                 player.paint(player.getX(), player.getY(), 50, 50);
                 clearInterval(mainTimer);
                 clearInterval(jumpTimer);
@@ -129,7 +155,7 @@
 
         enemyCount.forEach( function(value, index) {
             enemyCount[index]++;
-            if(enemyCount[index] >= 400){
+            if(enemyCount[index] >= 300){
                 enemyCount[index] = 0;
             }
         });
@@ -169,9 +195,20 @@
             holeInterval++;
         }
 
-        if(random(200) == 0 && (holeInterval >= 300 || holeInterval == 0) && enemyInterval == 0){ //敵ランダム生成
-            paintEnemy(1250);
-            enemys.push(1250);
+        if(random(100) == 0 && (holeInterval >= 300 || holeInterval == 0) && enemyInterval == 0){ //敵ランダム生成
+            switch(random(2)){
+                case 0:
+                    paintEnemy(enemy, 1250);
+                    enemys.push({enemyId:0, enemyPointX:1250, enemyPointY:355});
+                    break;
+                case 1:
+                    paintEnemy(enemy2, 1250);
+                    enemys.push({enemyId:1, enemyPointX:1250, enemyPointY:355});
+                    enemyUp.push(false);
+                    break;
+                defaurt:
+                    break;
+            }
             enemyCount.push(0);
             enemyInterval++;
         }
@@ -233,8 +270,8 @@
                 player.paint(player.getX(), fallHeight, 50, 50);
             }
         });
-        count++;
-        if(count >= 200){ //完全に落下するまで時間を置く
+        fallCount++;
+        if(fallCount >= 200){ //完全に落下するまで時間を置く
             clearInterval(mainTimer);
             clearInterval(fallTimer);
             ctx.fillText("GAME OVER", 200, 200);
@@ -247,9 +284,15 @@
         ctx.drawImage(hole, holePoint, 400, 100, 100);
     }
 
-    function paintEnemy(x) {
-        var enemyPoint = x;
-        ctx.drawImage(enemy, enemyPoint, 355, 50, 50);
+    function paintEnemy(id, x, y) {
+        switch(id){
+            case 0:
+                ctx.drawImage(enemy, x, y, 50, 50);
+                break;
+            case 1:
+                ctx.drawImage(enemy2, x, y, 50, 50);
+                break;
+            }
     }
 
     function paintBackground() {
@@ -300,7 +343,8 @@
     <canvas id="stage" width="1250" height="500"></canvas>
     <img id="start" src="start.png" onclick="go()"><br/>
     <img id="player" src="hero3.png" style="display:none" />
-    <img id="enemy" src="mon_027.gif" style="display:none" />
+    <img id="enemy" src="enemy.gif" style="display:none" />
+    <img id="enemy2" src="enemy2.gif" style="display:none" />
     <img id="grass" src="sougen.png" style="display:none" />
 
     <img id="hole" src="hole.png" style="display:none" />
