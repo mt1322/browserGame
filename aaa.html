@@ -5,8 +5,8 @@
     <style>
         #start {
             position: absolute;
-            left: 200px;
-            top: 200px;
+            left: 500px;
+            top: 250px;
         }
 
     </style>
@@ -24,10 +24,11 @@
     var holes = [];
     var enemys = [];
     var whileJump = false, whileFall = false, whileMove = false;
-    var jumpCount = 0, fallCount = 0;
+    var jumpCount = 0, fallCount = 0, playerCount = 0;;
     var holeInterval = 0, enemyInterval = 0;
     var moveX = 0;
-    var background = 0, background2 = 2500;
+    var background = 0, background2 = 2500, background3 = 5000, background4 = 7500;
+    var imgChange = false;
     var score = 0;
     var gameover = false;
 
@@ -47,7 +48,6 @@
         var grass = document.getElementById("grass");
         var hole = document.getElementById("hole");
         var beam = document.getElementById("beam");
-        ctx.drawImage(beam, 50, 50, 100, 100);
     }
 
     function Player(x, y) {
@@ -70,8 +70,13 @@
             this.y = y;
         }
 
-        this.paint = function(x, y, w, h) {
-            var img = document.getElementById("player");
+        this.paint = function(x, y, w, h, ic) {
+            if(ic){
+                var img = document.getElementById("player2");
+            }
+            else{
+                var img = document.getElementById("player");
+            }         
             ctx.drawImage(img, x, y, w, h);          
         }
 
@@ -89,6 +94,17 @@
 
     function tick() { //メインループ   
             paintBackground();
+            if((playerCount++ % 40) == 0){
+                if(imgChange){
+                    imgChange = false;
+                }
+                else{
+                    imgChange = true;
+                }
+            }
+            if(playerCount >= 400){ 
+                playerCount = 0; 
+            } 
             holes.forEach( function(value, index) {
             holes[index]--;
             paintHole(value);
@@ -137,7 +153,6 @@
                         enemys[index].beamPoint = value.enemyPointX-50;
                     }
                     enemys[index].enemyCount2++;
-                    console.log(value.enemyCount2);
                     if(value.enemyCount2 >= 300){
                         enemys[index].beamCheck = true;
                     }
@@ -150,6 +165,16 @@
             paintEnemy(value.enemyId, value.enemyPointX, value.enemyPointY);
             if(value.enemyId == 2){
                 enemys[index].beamPoint = paintBeam(value.enemyId, value.enemyPointX, value.enemyPointY, value.beamCheck, value.beamPoint);
+                if((player.getX()+30 > value.beamPoint) && (player.getX()-30 < value.beamPoint) && 
+                    (player.getY()+30 > 365)){
+                    gameover = true;
+                    player.paint(player.getX(), player.getY(), 50, 50, false);
+                    clearInterval(mainTimer);
+                    clearInterval(jumpTimer);
+                    ctx.font = "bold 48px sans-serif";
+                    ctx.fillText("GAME OVER", 450, 150);
+                    ctx.fillText("SCORE " + score, 450, 250);
+                }
             }
             if(value.enemyPointX <= -200){ //画面外にいる場合リセット
                 switch(value.enemyId){
@@ -168,25 +193,20 @@
                 gameover = true;
                 clearInterval(mainTimer);
                 ctx.font = "bold 48px sans-serif";
-                ctx.fillText("GAME OVER", 200, 200);
-                ctx.fillText("SCORE " + score, 200, 300);
+                ctx.fillText("GAME OVER", 450, 150);
+                ctx.fillText("SCORE " + score, 450, 250);
             }
             else if((player.getX()+30 > value.enemyPointX) && (player.getX()-30 < value.enemyPointX) && 
                     (player.getY()+30 > value.enemyPointY) && (player.getY()-30 < value.enemyPointY) && whileJump){ //敵の上に着地
                 gameover = true;
-                player.paint(player.getX(), player.getY(), 50, 50);
+                player.paint(player.getX(), player.getY(), 50, 50, false);
                 clearInterval(mainTimer);
                 clearInterval(jumpTimer);
                 ctx.font = "bold 48px sans-serif";
-                ctx.fillText("GAME OVER", 200, 200);
-                ctx.fillText("SCORE " + score, 200, 300);
+                ctx.fillText("GAME OVER", 450, 150);
+                ctx.fillText("SCORE " + score, 450, 250);
             }
         });
-
-        
-
-        
-
 
         keyCode.forEach( function(value) {
         switch(value){
@@ -203,7 +223,7 @@
                 }
                 break;
             case 90: //Zキー押下
-                player.paint(player.getX(), 355, 50, 50);
+                player.paint(player.getX(), 355, 50, 50, false);
                 clearInterval(jumpTimer);
                 clearInterval(mainTimer);
                 mainTimer = setInterval(tick, 7);
@@ -212,8 +232,9 @@
                 break;   
         }
         });
+
         if(isNaN(jumpTimer) && !whileFall){ //ジャンプ,落下していない場合常にプレイヤー描写
-            player.paint(player.getX(), 355, 50, 50);
+            player.paint(player.getX(), 355, 50, 50, imgChange);
         }
 
         if(holeInterval == 0){ //穴ランダム生成
@@ -224,18 +245,15 @@
 
         if(enemyInterval == 0){ //敵ランダム生成
             switch(random(10)){
-                case 0: //case 1: case 2: case 3: 
+                case 0: case 2: case 7: case 8: 
                     enemys.push({enemyId:0, enemyPointX:1250, enemyPointY:355, enemyCount:0});
                     break;
-                case 4: //case 5: case 6: case 7:
+                case 3: case 5: case 6: case 9:
                     enemys.push({enemyId:1, enemyPointX:1250, enemyPointY:355, enemyUp:false});
                     break;
-                case 8: case 9:
-                    enemys.push({enemyId:2, enemyPointX:1250, enemyPointY:355, enemyCount2:0, beamCheck:false, beamPoint:0});
+                case 1: case 4:
+                    enemys.push({enemyId:2, enemyPointX:1250, enemyPointY:355, enemyCount2:0, beamCheck:false, beamPoint:-200});
                     break;
-                default :
-                    enemys.push({enemyId:2, enemyPointX:1250, enemyPointY:355, enemyCount2:0, beamCheck:false, beamPoint:0});
-                    break;  
             }
             enemyInterval++;
         }
@@ -288,7 +306,7 @@
             dec = true;
         }
         
-        player.paint(player.getX(), jumpHeight, 50, 50);
+        player.paint(player.getX(), jumpHeight, 50, 50, false);
       
     }
 
@@ -297,10 +315,10 @@
         holes.forEach( function(value) {
             paintHole(value);
             if(player.getX() + 50 >= (holes[fallPoint]+100)){ //穴の右端に接触時プレイヤーを移動
-                player.paint(holes[fallPoint]+55, fallHeight, 50, 50);
+                player.paint(holes[fallPoint]+55, fallHeight, 50, 50, false);
             }
             else{
-                player.paint(player.getX(), fallHeight, 50, 50);
+                player.paint(player.getX(), fallHeight, 50, 50, false);
             }
         });
         fallCount++;
@@ -308,8 +326,8 @@
             clearInterval(mainTimer);
             clearInterval(fallTimer);
             ctx.font = "bold 48px sans-serif";
-            ctx.fillText("GAME OVER", 200, 200);
-            ctx.fillText("SCORE " + score, 200, 300);
+            ctx.fillText("GAME OVER", 450, 150);
+            ctx.fillText("SCORE " + score, 450, 250);
         }
 
     }
@@ -335,7 +353,7 @@
 
     function paintBeam(id, x, y, bc, bp) {
             if(id == 2){
-                ctx.drawImage(beam, bp, 365, 50, 50);
+                ctx.drawImage(beam, bp, 355, 50, 50);
                 bp -= 3;
                 if(bc){
                     ctx.drawImage(enemy3_2, x, y, 50, 75);
@@ -345,16 +363,26 @@
     }
 
     function paintBackground() {
-        background -= 1;
-        background2 -= 1;
+        background -= 0.5;
+        background2 -= 0.5;
+        background3 -= 0.5;
+        background4 -= 0.5;
         if(background <= -2500){
-            background = 2500;
+            background = 7500;
         }
         else if(background2 <= -2500){
-            background2 = 2500;
+            background2 = 7500;
+        }
+        else if(background2 <= -2500){
+            background2 = 7500;
+        }
+        else if(background2 <= -2500){
+            background2 = 7500;
         }
         ctx.drawImage(grass, background, 0, 2500, 500);
         ctx.drawImage(grass, background2, 0, 2500, 500);
+        ctx.drawImage(grass, background3, 0, 2500, 500);
+        ctx.drawImage(grass, background4, 0, 2500, 500);
     }
 
     function random(v) {
@@ -390,13 +418,14 @@
 </head>
 <body onload="init()">
     <canvas id="stage" width="1250" height="500"></canvas>
-    <img id="start" src="start.png" onclick="go()"><br/>
-    <img id="player" src="hero3.png" style="display:none" />
+    <img id="start" src="start2.gif" onclick="go()"><br/>
+    <img id="player" src="player.png" style="display:none" />
+    <img id="player2" src="player2.png" style="display:none" />
     <img id="enemy" src="enemy.gif" style="display:none" />
     <img id="enemy2" src="enemy2.gif" style="display:none" />
     <img id="enemy3" src="enemy3.gif" style="display:none" />
     <img id="enemy3_2" src="enemy3_2.gif" style="display:none" />
-    <img id="beam" src="beam3.gif" style="display:none" />
+    <img id="beam" src="beam2.gif" style="display:none" />
     <img id="grass" src="sougen.png" style="display:none" />
     <img id="hole" src="hole.png" style="display:none" />
     
